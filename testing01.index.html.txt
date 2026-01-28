@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EU HUB 庫存管理系統</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #006A8E;
+            --primary-hover: #005273;
+            --accent-color: #78BE21;
+            --danger-color: #dc2626;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .tab-button.active { border-bottom-width: 3px; border-color: var(--primary-color); color: var(--primary-color); font-weight: 600; }
+        .status-badge { padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .table-container { overflow-x: auto; border-radius: 8px; }
+        th { background-color: #f1f5f9; white-space: nowrap; }
+        td { white-space: nowrap; vertical-align: middle; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <span class="text-3xl">🇪🇺</span>
+                    <h1 class="text-2xl font-bold text-slate-800">EU HUB 庫存管理系統</h1>
+                </div>
+                <div id="auth-info" class="flex items-center space-x-4 text-sm text-slate-500 mt-2 sm:mt-0">
+                    <span class="bg-slate-100 px-3 py-1 rounded-full">管理員模式</span>
+                </div>
+            </div>
+            <nav class="flex space-x-6 border-b border-slate-200">
+                <button onclick="switchView('inventory')" id="tab-inventory" class="tab-button active py-3 px-1 text-slate-500 hover:text-slate-700 transition">庫存清單</button>
+                <button onclick="switchView('shipment')" id="tab-shipment" class="tab-button py-3 px-1 text-slate-500 hover:text-slate-700 transition">出貨作業</button>
+                <button onclick="switchView('history')" id="tab-history" class="tab-button py-3 px-1 text-slate-500 hover:text-slate-700 transition">歷史紀錄</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full p-4 sm:p-6">
+        
+        <!-- View: Inventory Management -->
+        <section id="view-inventory" class="view-section">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">當前庫存狀態</h2>
+                <button onclick="toggleForm()" class="bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                    <span class="mr-1">+</span> 新增入庫
+                </button>
+            </div>
+
+            <!-- Add/Edit Form -->
+            <div id="inventory-form-card" class="card p-6 mb-8 hidden">
+                <h3 class="text-lg font-bold mb-4 border-b pb-2 text-slate-700">貨物入庫登記</h3>
+                <form id="inventory-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase">Model</label>
+                        <input type="text" id="model" required class="mt-1 block w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase">Part No.</label>
+                        <input type="text" id="partNo" required class="mt-1 block w-full border border-slate-300 rounded-md p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase">Rack No.</label>
+                        <input type="text" id="rackNo" required class="mt-1 block w-full border border-slate-300 rounded-md p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase">Position</label>
+                        <input type="text" id="position" required class="mt-1 block w-full border border-slate-300 rounded-md p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase">Quantity</label>
+                        <input type="number" id="qty" min="1" required class="mt-1 block w-full border border-slate-300 rounded-md p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase">Wharehousing Date</label>
+                        <input type="date" id="whDate" required class="mt-1 block w-full border border-slate-300 rounded-md p-2 text-sm">
+                    </div>
+                    <div class="md:col-span-2 flex items-end space-x-2">
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 py-2 rounded-md text-sm font-bold transition">確認入庫</button>
+                        <button type="button" onclick="toggleForm()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-md text-sm transition">取消</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card overflow-hidden">
+                <div class="table-container">
+                    <table class="w-full text-sm text-left">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="px-4 py-3">Model</th>
+                                <th class="px-4 py-3">Part No.</th>
+                                <th class="px-4 py-3">Rack / Position</th>
+                                <th class="px-4 py-3">Stock Qty</th>
+                                <th class="px-4 py-3">Wharehousing Date</th>
+                                <th class="px-4 py-3 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody" class="divide-y divide-slate-100">
+                            <!-- JS Injection -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- View: Shipment -->
+        <section id="view-shipment" class="view-section hidden">
+            <h2 class="text-xl font-bold text-slate-800 mb-6">出貨排程作業</h2>
+            <div class="card p-6">
+                <form id="shipment-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b pb-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">選擇出貨品項</label>
+                            <select id="ship-item-id" required class="w-full border border-slate-300 rounded-lg p-3 bg-slate-50">
+                                <option value="">-- 請選擇庫存品項 --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">出貨數量</label>
+                            <input type="number" id="ship-qty" min="1" required class="w-full border border-slate-300 rounded-lg p-3">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Ship Date</label>
+                            <input type="date" id="ship-date" required class="w-full border border-slate-300 rounded-lg p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Invoice No.</label>
+                            <input type="text" id="ship-invoice" required placeholder="例如: INV-2024001" class="w-full border border-slate-300 rounded-lg p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Customer Name</label>
+                            <input type="text" id="ship-customer" required placeholder="客戶名稱" class="w-full border border-slate-300 rounded-lg p-3">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1">
+                        提交出貨申請 (扣除庫存並建立紀錄)
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- View: History -->
+        <section id="view-history" class="view-section hidden">
+            <h2 class="text-xl font-bold text-slate-800 mb-6">EU HUB 出貨與變動紀錄</h2>
+            <div class="card overflow-hidden">
+                <div class="table-container">
+                    <table class="w-full text-xs sm:text-sm text-left">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="px-4 py-3">Ship Date</th>
+                                <th class="px-4 py-3">Model / Part No.</th>
+                                <th class="px-4 py-3">Qty</th>
+                                <th class="px-4 py-3">Invoice No.</th>
+                                <th class="px-4 py-3">Customer</th>
+                                <th class="px-4 py-3">Warehouse Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody" class="divide-y divide-slate-100">
+                            <!-- JS Injection -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-6 text-slate-400 text-xs">
+        &copy; 2024 EU HUB Inventory System. All Rights Reserved.
+    </footer>
+
+    <script>
+        // --- Data State ---
+        let inventory = [
+            { id: '1', model: 'Pro Display XDR', partNo: 'MW632TA/A', rackNo: 'A1', position: '04-12', qty: 25, whDate: '2024-01-15' },
+            { id: '2', model: 'Mac Studio M2', partNo: 'MQH73TA/A', rackNo: 'B2', position: '01-05', qty: 12, whDate: '2024-02-10' }
+        ];
+        let history = [];
+
+        // --- View Switching ---
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${viewId}`).classList.add('active');
+
+            if (viewId === 'inventory') renderInventory();
+            if (viewId === 'shipment') updateShipmentDropdown();
+            if (viewId === 'history') renderHistory();
+        }
+
+        function toggleForm() {
+            const card = document.getElementById('inventory-form-card');
+            card.classList.toggle('hidden');
+        }
+
+        // --- Inventory Logic ---
+        document.getElementById('inventory-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now().toString(),
+                model: document.getElementById('model').value,
+                partNo: document.getElementById('partNo').value,
+                rackNo: document.getElementById('rackNo').value,
+                position: document.getElementById('position').value,
+                qty: parseInt(document.getElementById('qty').value),
+                whDate: document.getElementById('whDate').value
+            };
+            inventory.push(newItem);
+            renderInventory();
+            e.target.reset();
+            toggleForm();
+        });
+
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-tbody');
+            tbody.innerHTML = inventory.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-4 py-4 font-medium text-slate-900">${item.model}</td>
+                    <td class="px-4 py-4 text-slate-500">${item.partNo}</td>
+                    <td class="px-4 py-4">
+                        <span class="bg-amber-50 text-amber-700 px-2 py-1 rounded text-xs font-bold mr-1">${item.rackNo}</span>
+                        <span class="text-slate-400">/</span>
+                        <span class="ml-1">${item.position}</span>
+                    </td>
+                    <td class="px-4 py-4 font-bold ${item.qty < 5 ? 'text-red-500' : 'text-emerald-600'}">${item.qty}</td>
+                    <td class="px-4 py-4 text-slate-500">${item.whDate}</td>
+                    <td class="px-4 py-4 text-center">
+                        <button onclick="deleteItem('${item.id}')" class="text-slate-300 hover:text-red-500 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteItem(id) {
+            if (confirm('確定要移除此筆庫存資料嗎？')) {
+                inventory = inventory.filter(i => i.id !== id);
+                renderInventory();
+            }
+        }
+
+        // --- Shipment Logic ---
+        function updateShipmentDropdown() {
+            const select = document.getElementById('ship-item-id');
+            select.innerHTML = '<option value="">-- 請選擇庫存品項 --</option>' + 
+                inventory.map(item => `<option value="${item.id}">${item.model} (${item.partNo}) - Stock: ${item.qty}</option>`).join('');
+        }
+
+        document.getElementById('shipment-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const itemId = document.getElementById('ship-item-id').value;
+            const shipQty = parseInt(document.getElementById('ship-qty').value);
+            const item = inventory.find(i => i.id === itemId);
+
+            if (item.qty < shipQty) {
+                alert('錯誤：出貨數量大於現有庫存！');
+                return;
+            }
+
+            // Update Stock
+            item.qty -= shipQty;
+
+            // Add History
+            history.unshift({
+                shipDate: document.getElementById('ship-date').value,
+                model: item.model,
+                partNo: item.partNo,
+                qty: shipQty,
+                invoice: document.getElementById('ship-invoice').value,
+                customer: document.getElementById('ship-customer').value,
+                whDate: item.whDate
+            });
+
+            alert('出貨成功！庫存已扣除。');
+            e.target.reset();
+            switchView('inventory');
+        });
+
+        function renderHistory() {
+            const tbody = document.getElementById('history-tbody');
+            if (history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">目前尚無出貨紀錄</td></tr>';
+                return;
+            }
+            tbody.innerHTML = history.map(h => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-4 py-4 font-semibold text-sky-800">${h.shipDate}</td>
+                    <td class="px-4 py-4">
+                        <div class="font-medium">${h.model}</div>
+                        <div class="text-xs text-slate-400">${h.partNo}</div>
+                    </td>
+                    <td class="px-4 py-4 font-bold">-${h.qty}</td>
+                    <td class="px-4 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${h.invoice}</span></td>
+                    <td class="px-4 py-4">${h.customer}</td>
+                    <td class="px-4 py-4 text-slate-400 text-xs">${h.whDate}</td>
+                </tr>
+            `).join('');
+        }
+
+        // --- Init ---
+        window.onload = () => {
+            renderInventory();
+        };
+    </script>
+</body>
+</html>
